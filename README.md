@@ -1,20 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 📚 TutorSpace (과외 관리 시스템)
 
-# Run and deploy your AI Studio app
+선생님, 학부모, 학생을 위한 맞춤형 과외 관리 및 소통 플랫폼입니다.
 
-This contains everything you need to run your app locally.
+## 🌟 주요 기능
 
-View your app in AI Studio: https://ai.studio/apps/78d8f24f-2dd4-41d2-b8aa-01d1388297f1
+### 👨‍🏫 선생님 (관리자)
+* **계정 관리**: 학생 및 학부모 계정 생성 및 연결, 비밀번호 초기화
+* **수업 일지 관리**: 학생별 수업 날짜, 회차, 진도, 숙제, 피드백 작성
+* **결제 관리**: 학부모에게 수업료 입금 요청(청구서 발행) 및 수동 입금 확인(결제 완료 처리)
 
-## Run Locally
+### 👨‍👩‍👧 학부모
+* **학습 현황**: 자녀의 수업 진도, 숙제, 선생님 피드백 실시간 확인
+* **결제 내역**: 선생님이 요청한 수업료 청구서 및 입금 계좌 확인, 역대 결제 내역 조회
 
-**Prerequisites:**  Node.js
+### 🧑‍🎓 학생
+* **나의 학습 기록**: 본인의 수업 진도, 해야 할 숙제, 선생님의 피드백 확인
 
+## 🛠 기술 스택
+* **Frontend**: React 19, TypeScript, Vite
+* **Styling**: Tailwind CSS
+* **State Management**: Zustand
+* **Routing**: React Router v6
+* **Icons**: Lucide React
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🚀 실행 방법
+
+1. 패키지 설치
+```bash
+npm install
+```
+
+2. 개발 서버 실행
+```bash
+npm run dev
+```
+
+3. 브라우저에서 `http://localhost:5173` (또는 터미널에 표시된 포트) 접속
+
+## 🔐 테스트 계정 안내
+* **선생님(관리자)**: `admin` / `123`
+* (학생 및 학부모 계정은 선생님 로그인 후 직접 생성하여 테스트할 수 있습니다.)
