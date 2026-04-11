@@ -90,6 +90,8 @@ function UserManagement() {
     name: '',
     username: '',
     password: '',
+    phone: '',
+    school: '',
     linkedId: '',
   });
 
@@ -100,33 +102,44 @@ function UserManagement() {
     }
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     const userData: any = {
       role: formData.role,
       name: formData.name,
       username: formData.username,
       password: formData.password,
+      phone: formData.phone,
     };
 
     if (formData.role === 'student') {
       userData.linkedParentId = formData.linkedId || undefined;
+      userData.school = formData.school || undefined;
     } else if (formData.role === 'parent') {
       userData.linkedStudentId = formData.linkedId || undefined;
     }
 
-    const newId = addUser(userData);
+    const newId = await addUser(userData);
     
     // 양방향 연결
     if (formData.role === 'student' && formData.linkedId) {
-      updateUser(formData.linkedId, { linkedStudentId: newId });
+      await updateUser(formData.linkedId, { linkedStudentId: newId });
     } else if (formData.role === 'parent' && formData.linkedId) {
-      updateUser(formData.linkedId, { linkedParentId: newId });
+      await updateUser(formData.linkedId, { linkedParentId: newId });
     }
 
-    setFormData({ role: 'student', name: '', username: '', password: '', linkedId: '' });
+    setFormData({ role: 'student', name: '', username: '', password: '', phone: '', school: '', linkedId: '' });
     alert('계정이 생성되었습니다.');
   };
+
+  const handleLink = async (studentId: string, parentId: string) => {
+    await updateUser(studentId, { linkedParentId: parentId });
+    await updateUser(parentId, { linkedStudentId: studentId });
+    alert('계정이 연결되었습니다.');
+  };
+
+  const students = users.filter(u => u.role === 'student');
+  const parents = users.filter(u => u.role === 'parent');
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -198,6 +211,28 @@ function UserManagement() {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">전화번호</label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="010-0000-0000"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+              />
+            </div>
+            {formData.role === 'student' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">학교 (선택)</label>
+                <input
+                  type="text"
+                  value={formData.school}
+                  onChange={e => setFormData({ ...formData, school: e.target.value })}
+                  placeholder="예: 서울고등학교"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+            )}
+            <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 {formData.role === 'student' ? '연결할 학부모 (선택)' : '연결할 학생 (선택)'}
               </label>
@@ -245,10 +280,31 @@ function UserManagement() {
                       <span className="font-bold text-slate-900">{user.name}</span>
                     </div>
                     <p className="text-sm text-slate-500">ID: {user.username}</p>
-                    {linkedUser && (
+                    <div className="text-xs text-slate-400 mt-1 flex gap-2">
+                      {user.phone && <span>📞 {user.phone}</span>}
+                      {user.school && <span>🏫 {user.school}</span>}
+                    </div>
+                    {linkedUser ? (
                       <p className="text-xs text-indigo-600 mt-1">
                         연결됨: {linkedUser.name} {linkedUser.role === 'student' ? '학생' : '학부모'}
                       </p>
+                    ) : (
+                      <div className="mt-2">
+                        <select
+                          onChange={(e) => {
+                            if (user.role === 'student') handleLink(user.id, e.target.value);
+                            else handleLink(e.target.value, user.id);
+                          }}
+                          className="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-indigo-500"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>{user.role === 'student' ? '학부모 연결하기' : '학생 연결하기'}</option>
+                          {user.role === 'student'
+                            ? parents.filter(p => !p.linkedStudentId).map(p => <option key={p.id} value={p.id}>{p.name} 학부모</option>)
+                            : students.filter(s => !s.linkedParentId).map(s => <option key={s.id} value={s.id}>{s.name} 학생</option>)
+                          }
+                        </select>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application (admin, parent, or student)",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["admin", "parent", "student"],
+          "description": "The role of the user"
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the user"
+        },
+        "username": {
+          "type": "string",
+          "description": "The login username"
+        },
+        "password": {
+          "type": "string",
+          "description": "The login password"
+        },
+        "linkedStudentId": {
+          "type": "string",
+          "description": "For parents, the ID of the linked student"
+        },
+        "linkedParentId": {
+          "type": "string",
+          "description": "For students, the ID of the linked parent"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "school": {
+          "type": "string",
+          "description": "School name (for students)"
+        }
+      },
+      "required": ["role", "name", "username", "password"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A lesson record",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "ID of the student"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the lesson (YYYY-MM-DD)"
+        },
+        "homework": {
+          "type": "string",
+          "description": "Homework assigned"
+        },
+        "progress": {
+          "type": "string",
+          "description": "Progress made during the lesson"
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Teacher's feedback"
+        },
+        "lessonCount": {
+          "type": "number",
+          "description": "The session number"
+        }
+      },
+      "required": ["studentId", "date", "progress", "lessonCount"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "A payment request/record",
+      "type": "object",
+      "properties": {
+        "parentId": {
+          "type": "string",
+          "description": "ID of the parent"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "ID of the student"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the payment request"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount to be paid"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date for the payment (YYYY-MM-DD)"
+        },
+        "accountInfo": {
+          "type": "string",
+          "description": "Bank account information for deposit"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed"],
+          "description": "Payment status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["parentId", "title", "amount", "dueDate", "accountInfo", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Collection of users"
+    },
+    "/lessons/{lessonId}": {
+      "schema": {
+        "$ref": "#/entities/Lesson"
+      },
+      "description": "Collection of lessons"
+    },
+    "/payments/{paymentId}": {
+      "schema": {
+        "$ref": "#/entities/Payment"
+      },
+      "description": "Collection of payments"
+    }
+  }
+}

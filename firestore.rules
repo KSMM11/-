@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: auto-generated
+    // Fields:
+    //   - role: string (admin, parent, student)
+    //   - name: string
+    //   - username: string
+    //   - password: string
+    //   - linkedStudentId: string (optional)
+    //   - linkedParentId: string (optional)
+    //   - phone: string (optional)
+    //   - school: string (optional)
+    //
+    // Collection: lessons
+    // Document ID: auto-generated
+    // Fields:
+    //   - studentId: string
+    //   - date: string
+    //   - homework: string
+    //   - progress: string
+    //   - feedback: string
+    //   - lessonCount: number
+    //
+    // Collection: payments
+    // Document ID: auto-generated
+    // Fields:
+    //   - parentId: string
+    //   - studentId: string (optional)
+    //   - title: string
+    //   - amount: number
+    //   - dueDate: string
+    //   - accountInfo: string
+    //   - status: string (pending, completed)
+    //   - createdAt: string
+    // ===============================================================
+
+    // Since this app uses a custom login system (username/password) without Firebase Auth,
+    // we have to allow read/write access to everyone for the prototype to function.
+    // WARNING: This is highly insecure and should not be used in production.
+    // In a real app, you should use Firebase Auth and secure these rules.
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /lessons/{lessonId} {
+      allow read, write: if true;
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if true;
+    }
+  }
+}

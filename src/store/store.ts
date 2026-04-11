@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { db } from '../firebase';
+import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export type Role = 'admin' | 'parent' | 'student';
 
@@ -42,35 +44,48 @@ interface StoreState {
   lessons: Lesson[];
   payments: Payment[];
   
+  // Setters for syncing from Firestore
+  setUsers: (users: User[]) => void;
+  setLessons: (lessons: Lesson[]) => void;
+  setPayments: (payments: Payment[]) => void;
+  
   login: (username: string, password?: string) => boolean;
   logout: () => void;
   
-  addUser: (user: Omit<User, 'id'>) => string;
-  updateUser: (id: string, user: Partial<User>) => void;
-  deleteUser: (id: string) => void;
+  addUser: (user: Omit<User, 'id'>) => Promise<string>;
+  updateUser: (id: string, user: Partial<User>) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
   
-  addLesson: (lesson: Omit<Lesson, 'id'>) => void;
-  updateLesson: (id: string, lesson: Partial<Lesson>) => void;
-  deleteLesson: (id: string) => void;
+  addLesson: (lesson: Omit<Lesson, 'id'>) => Promise<void>;
+  updateLesson: (id: string, lesson: Partial<Lesson>) => Promise<void>;
+  deleteLesson: (id: string) => Promise<void>;
   
-  addPayment: (payment: Omit<Payment, 'id' | 'status' | 'createdAt'>) => void;
-  confirmPayment: (id: string) => void;
-  deletePayment: (id: string) => void;
+  addPayment: (payment: Omit<Payment, 'id' | 'status' | 'createdAt'>) => Promise<void>;
+  confirmPayment: (id: string) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
 }
-
-const initialUsers: User[] = [
-  { id: '1', role: 'admin', name: '선생님', username: 'admin', password: '123', phone: '010-1234-5678' },
-];
-
-const initialLessons: Lesson[] = [];
-
-const initialPayments: Payment[] = [];
 
 export const useStore = create<StoreState>((set, get) => ({
   currentUser: null,
-  users: initialUsers,
-  lessons: initialLessons,
-  payments: initialPayments,
+  users: [],
+  lessons: [],
+  payments: [],
+
+  setUsers: (users) => {
+    set({ users });
+    // Update currentUser if it exists in the new users list
+    const current = get().currentUser;
+    if (current) {
+      const updatedCurrent = users.find(u => u.id === current.id);
+      if (updatedCurrent) {
+        set({ currentUser: updatedCurrent });
+      } else {
+        set({ currentUser: null });
+      }
+    }
+  },
+  setLessons: (lessons) => set({ lessons }),
+  setPayments: (payments) => set({ payments }),
 
   login: (username, password) => {
     const user = get().users.find(u => u.username === username && u.password === password);
@@ -82,42 +97,48 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   logout: () => set({ currentUser: null }),
 
-  addUser: (userData) => {
-    const newId = Date.now().toString();
-    set(state => ({
-      users: [...state.users, { ...userData, id: newId }]
-    }));
-    return newId;
+  addUser: async (userData) => {
+    const newRef = doc(collection(db, 'users'));
+    const newUser = { ...userData, id: newRef.id };
+    await setDoc(newRef, newUser);
+    return newRef.id;
   },
-  updateUser: (id, userData) => set(state => {
-    const updatedUsers = state.users.map(u => u.id === id ? { ...u, ...userData } : u);
-    const isCurrentUser = state.currentUser?.id === id;
-    return {
-      users: updatedUsers,
-      currentUser: isCurrentUser ? { ...state.currentUser!, ...userData } : state.currentUser
+  updateUser: async (id, userData) => {
+    const ref = doc(db, 'users', id);
+    await updateDoc(ref, userData);
+  },
+  deleteUser: async (id) => {
+    await deleteDoc(doc(db, 'users', id));
+  },
+
+  addLesson: async (lessonData) => {
+    const newRef = doc(collection(db, 'lessons'));
+    const newLesson = { ...lessonData, id: newRef.id };
+    await setDoc(newRef, newLesson);
+  },
+  updateLesson: async (id, lessonData) => {
+    const ref = doc(db, 'lessons', id);
+    await updateDoc(ref, lessonData);
+  },
+  deleteLesson: async (id) => {
+    await deleteDoc(doc(db, 'lessons', id));
+  },
+
+  addPayment: async (paymentData) => {
+    const newRef = doc(collection(db, 'payments'));
+    const newPayment = { 
+      ...paymentData, 
+      id: newRef.id, 
+      status: 'pending' as const, 
+      createdAt: new Date().toISOString() 
     };
-  }),
-  deleteUser: (id) => set(state => ({
-    users: state.users.filter(u => u.id !== id)
-  })),
-
-  addLesson: (lessonData) => set(state => ({
-    lessons: [...state.lessons, { ...lessonData, id: Date.now().toString() }]
-  })),
-  updateLesson: (id, lessonData) => set(state => ({
-    lessons: state.lessons.map(l => l.id === id ? { ...l, ...lessonData } : l)
-  })),
-  deleteLesson: (id) => set(state => ({
-    lessons: state.lessons.filter(l => l.id !== id)
-  })),
-
-  addPayment: (paymentData) => set(state => ({
-    payments: [...state.payments, { ...paymentData, id: Date.now().toString(), status: 'pending', createdAt: new Date().toISOString() }]
-  })),
-  confirmPayment: (id) => set(state => ({
-    payments: state.payments.map(p => p.id === id ? { ...p, status: 'completed' } : p)
-  })),
-  deletePayment: (id) => set(state => ({
-    payments: state.payments.filter(p => p.id !== id)
-  })),
+    await setDoc(newRef, newPayment);
+  },
+  confirmPayment: async (id) => {
+    const ref = doc(db, 'payments', id);
+    await updateDoc(ref, { status: 'completed' });
+  },
+  deletePayment: async (id) => {
+    await deleteDoc(doc(db, 'payments', id));
+  },
 }));
