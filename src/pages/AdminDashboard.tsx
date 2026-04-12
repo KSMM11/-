@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useStore, User } from '../store/store';
-import { Users, FileText, CreditCard, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { useStore, User, Lesson } from '../store/store';
+import { Users, FileText, CreditCard, Plus, Trash2, CheckCircle, Edit2, X } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'lessons' | 'payments'>('users');
@@ -344,9 +344,10 @@ function UserManagement() {
 }
 
 function LessonManagement() {
-  const { users, lessons, addLesson } = useStore();
+  const { users, lessons, addLesson, updateLesson, deleteLesson } = useStore();
   const students = users.filter(u => u.role === 'student');
   
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     studentId: '',
     date: '',
@@ -356,25 +357,83 @@ function LessonManagement() {
     feedback: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addLesson({
-      studentId: formData.studentId,
-      date: formData.date,
-      lessonCount: Number(formData.lessonCount),
-      progress: formData.progress,
-      homework: formData.homework,
-      feedback: formData.feedback,
-    });
+    if (editingLessonId) {
+      await updateLesson(editingLessonId, {
+        studentId: formData.studentId,
+        date: formData.date,
+        lessonCount: Number(formData.lessonCount),
+        progress: formData.progress,
+        homework: formData.homework,
+        feedback: formData.feedback,
+      });
+      alert('일지가 수정되었습니다.');
+      setEditingLessonId(null);
+    } else {
+      await addLesson({
+        studentId: formData.studentId,
+        date: formData.date,
+        lessonCount: Number(formData.lessonCount),
+        progress: formData.progress,
+        homework: formData.homework,
+        feedback: formData.feedback,
+      });
+      alert('일지가 등록되었습니다.');
+    }
     setFormData({ ...formData, progress: '', homework: '', feedback: '', lessonCount: String(Number(formData.lessonCount) + 1) });
-    alert('일지가 등록되었습니다.');
+  };
+
+  const handleEdit = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
+    setFormData({
+      studentId: lesson.studentId,
+      date: lesson.date,
+      lessonCount: String(lesson.lessonCount),
+      progress: lesson.progress,
+      homework: lesson.homework,
+      feedback: lesson.feedback,
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('이 수업 일지를 삭제하시겠습니까?')) {
+      await deleteLesson(id);
+      if (editingLessonId === id) {
+        handleCancelEdit();
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLessonId(null);
+    setFormData({
+      studentId: '',
+      date: '',
+      lessonCount: '',
+      progress: '',
+      homework: '',
+      feedback: '',
+    });
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
       {/* Left Column: Form */}
       <section>
-        <h3 className="text-lg font-bold text-slate-900 mb-6">새 수업 일지 등록</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-slate-900">
+            {editingLessonId ? '수업 일지 수정' : '새 수업 일지 등록'}
+          </h3>
+          {editingLessonId && (
+            <button
+              onClick={handleCancelEdit}
+              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+            >
+              <X className="w-4 h-4" /> 취소
+            </button>
+          )}
+        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">학생 선택</label>
@@ -440,8 +499,8 @@ function LessonManagement() {
             />
           </div>
           <button type="submit" className="w-full py-3.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-            <Plus className="w-5 h-5" />
-            일지 등록하기
+            {editingLessonId ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {editingLessonId ? '일지 수정하기' : '일지 등록하기'}
           </button>
         </form>
       </section>
@@ -458,13 +517,29 @@ function LessonManagement() {
             {lessons.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(lesson => {
               const student = students.find(s => s.id === lesson.studentId);
               return (
-                <div key={lesson.id} className="p-5 border border-slate-100 rounded-2xl hover:shadow-md transition-shadow bg-white">
+                <div key={lesson.id} className={`p-5 border rounded-2xl transition-all bg-white ${editingLessonId === lesson.id ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-100 hover:shadow-md'}`}>
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-900">{student?.name}</span>
                       <span className="text-sm text-slate-500">{lesson.date}</span>
                     </div>
-                    <span className="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded-md">{lesson.lessonCount}회차</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded-md">{lesson.lessonCount}회차</span>
+                      <button
+                        onClick={() => handleEdit(lesson)}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title="수정"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(lesson.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="삭제"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm font-medium text-indigo-600 mb-2">{lesson.progress}</p>
                   <p className="text-sm text-slate-600 line-clamp-2">{lesson.feedback}</p>
