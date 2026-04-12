@@ -100,12 +100,23 @@ export const useStore = create<StoreState>((set, get) => ({
   addUser: async (userData) => {
     const newRef = doc(collection(db, 'users'));
     const newUser = { ...userData, id: newRef.id };
+    Object.keys(newUser).forEach(key => {
+      if ((newUser as any)[key] === undefined) {
+        delete (newUser as any)[key];
+      }
+    });
     await setDoc(newRef, newUser);
     return newRef.id;
   },
   updateUser: async (id, userData) => {
     const ref = doc(db, 'users', id);
-    await updateDoc(ref, userData);
+    const updateData = { ...userData };
+    Object.keys(updateData).forEach(key => {
+      if ((updateData as any)[key] === undefined) {
+        delete (updateData as any)[key];
+      }
+    });
+    await updateDoc(ref, updateData);
   },
   deleteUser: async (id) => {
     await deleteDoc(doc(db, 'users', id));
@@ -114,11 +125,22 @@ export const useStore = create<StoreState>((set, get) => ({
   addLesson: async (lessonData) => {
     const newRef = doc(collection(db, 'lessons'));
     const newLesson = { ...lessonData, id: newRef.id };
+    Object.keys(newLesson).forEach(key => {
+      if ((newLesson as any)[key] === undefined) {
+        delete (newLesson as any)[key];
+      }
+    });
     await setDoc(newRef, newLesson);
   },
   updateLesson: async (id, lessonData) => {
     const ref = doc(db, 'lessons', id);
-    await updateDoc(ref, lessonData);
+    const updateData = { ...lessonData };
+    Object.keys(updateData).forEach(key => {
+      if ((updateData as any)[key] === undefined) {
+        delete (updateData as any)[key];
+      }
+    });
+    await updateDoc(ref, updateData);
   },
   deleteLesson: async (id) => {
     await deleteDoc(doc(db, 'lessons', id));
@@ -132,6 +154,11 @@ export const useStore = create<StoreState>((set, get) => ({
       status: 'pending' as const, 
       createdAt: new Date().toISOString() 
     };
+    Object.keys(newPayment).forEach(key => {
+      if ((newPayment as any)[key] === undefined) {
+        delete (newPayment as any)[key];
+      }
+    });
     await setDoc(newRef, newPayment);
   },
   confirmPayment: async (id) => {

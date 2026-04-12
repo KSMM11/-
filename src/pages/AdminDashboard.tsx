@@ -113,11 +113,18 @@ function UserManagement() {
     };
 
     if (formData.role === 'student') {
-      userData.linkedParentId = formData.linkedId || undefined;
-      userData.school = formData.school || undefined;
+      if (formData.linkedId) userData.linkedParentId = formData.linkedId;
+      if (formData.school) userData.school = formData.school;
     } else if (formData.role === 'parent') {
-      userData.linkedStudentId = formData.linkedId || undefined;
+      if (formData.linkedId) userData.linkedStudentId = formData.linkedId;
     }
+
+    // Remove any undefined or empty string values to prevent Firestore errors
+    Object.keys(userData).forEach(key => {
+      if (userData[key] === undefined || userData[key] === '') {
+        delete userData[key];
+      }
+    });
 
     const newId = await addUser(userData);
     
