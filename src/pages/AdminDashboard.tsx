@@ -82,7 +82,7 @@ export default function AdminDashboard() {
 }
 
 function UserManagement() {
-  const { currentUser, users, addUser, updateUser } = useStore();
+  const { currentUser, users, addUser, updateUser, deleteUser } = useStore();
   const [teacherName, setTeacherName] = useState(currentUser?.name || '');
   
   const [formData, setFormData] = useState({
@@ -143,6 +143,18 @@ function UserManagement() {
     await updateUser(studentId, { linkedParentId: parentId });
     await updateUser(parentId, { linkedStudentId: studentId });
     alert('계정이 연결되었습니다.');
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (window.confirm(`${user.name} ${user.role === 'student' ? '학생' : '학부모'} 계정을 삭제하시겠습니까?`)) {
+      if (user.role === 'student' && user.linkedParentId) {
+        await updateUser(user.linkedParentId, { linkedStudentId: '' });
+      } else if (user.role === 'parent' && user.linkedStudentId) {
+        await updateUser(user.linkedStudentId, { linkedParentId: '' });
+      }
+      await deleteUser(user.id);
+      alert('삭제되었습니다.');
+    }
   };
 
   const students = users.filter(u => u.role === 'student');
@@ -314,6 +326,13 @@ function UserManagement() {
                       </div>
                     )}
                   </div>
+                  <button
+                    onClick={() => handleDeleteUser(user)}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="계정 삭제"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
               );
             })}
